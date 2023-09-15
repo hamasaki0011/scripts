@@ -1,14 +1,17 @@
+import sys
 import requests
-import pprint
-import json
+# import pprint
+# import json
 
-# url = 'http://127.0.0.1:8080/form.html'
-# url = 'http://127.0.0.1:8080/upload.html'
-url = 'http://10.10.210.87/upload'
+file_name = 'csvs/' + sys.argv[1] + '.csv'
+print("ファイル名 = ", file_name)
+
+url = 'http://127.0.0.1:8000/upload/'
+# url = 'http://10.10.210.87/uploa d'
 session = requests.session()
 
+# To get cookie
 res = session.get(url)
-# print("res = ", res.text)
 csrf = session.cookies['csrftoken']
 print("csrf = ", csrf)
 
@@ -17,21 +20,18 @@ data = {
     "csrfmiddlewaretoken" : csrf,
 }
 files = {
-    'file': open('csvs/testNew_17.csv', 'rb')
+    'file': open(file_name, 'rb')
     }
 
 headers = {
     "Referer": url,
+    # 注意：以下を指定すると誤動作する
     # "Content-Type": "multipart/form-data" ,
     }
 
-# response = session.post(url, files = files, headers = headers)
 response = session.post(url, data = data, files = files, headers = headers)
-# r = requests.post(url, files=files, headers=headers)
+
 print('post_r =', response.status_code)
-print('post_headers =', response.headers)
-# print('post_text =', response.text)
-# pprint.pprint(response.json())
 
 # 2023.9.15 ファイル保存 
 with open("work/response_text.txt", "ab") as f:
