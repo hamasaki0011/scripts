@@ -17,7 +17,7 @@ data = {
     "csrfmiddlewaretoken" : csrf,
 }
 files = {
-    'file': open('testNew_17.csv', 'rb')
+    'file': open('csvs/testNew_17.csv', 'rb')
     }
 
 headers = {
@@ -32,3 +32,7 @@ print('post_r =', response.status_code)
 print('post_headers =', response.headers)
 # print('post_text =', response.text)
 # pprint.pprint(response.json())
+
+# 2023.9.15 ファイル保存 
+with open("work/response_text.txt", "ab") as f:
+    f.write(response.text.encode())
