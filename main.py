@@ -6,8 +6,8 @@ import requests
 file_name = 'csvs/' + sys.argv[1] + '.csv'
 print("ファイル名 = ", file_name)
 
-url = 'http://127.0.0.1:8000/upload/'
-# url = 'http://10.10.210.87/uploa d'
+url = 'http://10.10.210.87/upload/'
+
 session = requests.session()
 
 # To get cookie
