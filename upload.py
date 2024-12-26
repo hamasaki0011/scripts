@@ -36,14 +36,14 @@ def upload_data(url, file_name):
         "Referer": url,
         # 注意：以下を指定すると誤動作する
         # "Content-Type": "multipart/form-data" ,
-        }
+    }
 
     response = session.post(
         url, 
         data = data, 
         files = files, 
         headers = headers
-        )
+    )
     
     return response
 
@@ -75,9 +75,11 @@ if __name__ == "__main__":
         now = datetime.datetime.now()
         now_full = now.strftime("%Y-%m-%d %H:%M")
         now_s = now.strftime("%S")
-        #print(now_s)
+
+        print("\rnow: "+now_s,end="")
         if now_s == "05":
-            print("It's time to upload!")
+            print("\n")
+            print(f"Start to upload! @{now_full}.")
             try:
                 response = upload_data(URL, file_name)
                 response_code = response.status_code

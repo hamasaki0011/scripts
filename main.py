@@ -3,7 +3,7 @@ import requests
 # import pprint
 # import json
 
-file_name = 'csvs/' + sys.argv[1] + '.csv'
+file_name = '../upload_file/' + sys.argv[1] + '.csv'
 print("ファイル名 = ", file_name)
 
 url = 'http://10.10.210.87/upload/'
@@ -27,7 +27,7 @@ headers = {
     "Referer": url,
     # 注意：以下を指定すると誤動作する
     # "Content-Type": "multipart/form-data" ,
-    }
+}
 
 response = session.post(url, data = data, files = files, headers = headers)
 
