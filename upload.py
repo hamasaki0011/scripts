@@ -97,7 +97,207 @@ if __name__ == "__main__":
         
             else:
                 print (f"-- missed upload, error: {response_code} --")
-        #else:
-        #    print("Not at time, It's " + now.strftime("%Y-%m-%d %H:%M:%S"))
-        # threading.Timer(10, upload_task(URL, file_name)).start()
         time.sleep(1)
+
+
+##################################################
+#      モジュールの読み込み
+##################################################
+
+#I2C
+#from machine import Pin, I2C
+#from pico_i2c_lcd import I2cLcd
+
+#Network/NTP
+import network
+import rp2
+import ntptime
+import time
+
+
+##################################################
+#      Wi-Fi接続／時刻パラメータ
+##################################################
+
+#Wi-Fi接続パラメータ
+ssid = "Wi-FiルータのSSIDを設定します。"
+password = "Wi-Fiルータのパスワードを設定します。"
+
+#日本標準時(UTC+9時間)
+UTC_OFFSET = 9
+
+#NTPサーバ ドメイン
+NTP_SRV = "ntp.nict.jp"
+
+
+##################################################
+#
+#      液晶ディスプレイ（LCD）初期設定
+#
+##################################################
+
+#I2Cを利用するため、オブジェクト（i2c）を作成
+i2c = I2C(0,sda=Pin(16), scl=Pin(17), freq=400000)
+
+
+#LCDのパラメータを設定
+ADR = 0x27
+ROW = 2
+COL = 16
+
+
+#LCDを利用するため、オブジェクト（lcd）を作成
+lcd = I2cLcd(i2c, ADR, ROW, COL)
+
+##################################################
+#
+#      【関数】Wi-Fiに接続
+#
+##################################################
+
+def wifi_connect():
+    #Wi-Fi地域（日本）の設定
+    rp2.country('JP')
+
+    #ステーションインタフェースの有効化
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+
+    #Wi-Fiの省電力をオフに設定
+    wlan.config(pm = 0xa11140)
+    
+    #液晶ディスプレイ画面を消去
+    lcd.clear()
+
+    #Wi-Fiに接続
+    wlan.connect(ssid, password)
+    while not wlan.isconnected() and wlan.status() >= 0:
+
+        #LCDに文字表示
+        lcd_disp("Wait for", "connection...")       
+        time.sleep(1)
+    
+    ip_add = wlan.ifconfig()[0]
+    lcd_disp("Connected on", f' {ip_add}')
+    
+    #ダミー
+    time.sleep(2)
+
+    return ip_add
+
+
+##################################################
+#
+#      【関数】NTPサーバから日時取得
+#
+##################################################
+
+def get_ntp_time():
+
+    #NTPサーバ
+    ntptime.server = NTP_SRV
+    
+    #NTPサーバへの接続待ち
+    time.sleep(1)
+    
+    #ローカル時刻をUTC標準時刻に同期
+    ntptime.settime()
+      
+    #液晶ディスプレイ画面を消去
+    lcd.clear()
+    
+    #LCDに文字表示
+    lcd_disp("Connected to", "NTP server.")
+    
+    #ダミー
+    time.sleep(2)
+   
+
+##################################################
+#
+#      【関数】日付・時刻整形
+#
+##################################################
+
+def format_dttm(day_tm):
+    
+    #日付
+    dat = ("%4d/%02d/%02d" % (day_tm[0:3]))
+    
+    #時刻
+    tm = ("%2d:%02d:%02d" % (day_tm[3:6]))
+    
+    return dat ,tm
+
+
+##################################################
+#
+#      【関数】LCDに文字表示
+#
+##################################################
+
+def lcd_disp(msg1, msg2):
+    
+    #LCDに文字を表示
+    lcd.move_to(0, 0)
+    lcd.putstr(msg1) 
+    lcd.move_to(0, 1)
+    lcd.putstr(msg2)
+
+
+##################################################
+#
+#      【関数】日付時刻を取得
+#
+##################################################
+
+def get_dattm():
+     
+    #ローカル時刻
+    lcl_tm =  time.localtime(time.mktime(time.localtime()) + UTC_OFFSET * 60 * 60)          
+   
+    #日付・時刻整形
+    dat ,tm = format_dttm(lcl_tm)
+        
+    return dat,tm
+   
+   
+##################################################
+#
+#      メイン
+#
+##################################################
+
+
+try:
+    
+    #Wi-Fiに接続
+    ip_add = wifi_connect()
+    
+    #NTPサーバから日時取得
+    get_ntp_time()
+    
+    #液晶ディスプレイ画面を消去
+    lcd.clear()
+    
+    #液晶ディスプレイに日付・時刻表示
+    while True:
+        #日付・時刻を取得
+        dat,tm = get_dattm()    
+    
+        #LCDに文字表示
+        lcd_disp(dat, tm)
+        
+        #1秒待ち
+        time.sleep(1)
+        
+
+except KeyboardInterrupt:
+    # Turn off the display
+    print("「Ctrl + c」キーが押されました。")
+    
+    #LCD消灯
+    lcd.backlight_off()
+    lcd.display_off()
+    
+    machine.reset()
