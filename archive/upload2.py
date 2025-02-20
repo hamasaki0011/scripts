@@ -12,16 +12,18 @@ import rp2
 import ntptime
 #import time
 
-# Target url
+
+# This is the target url
 URL = 'http://10.10.210.87/upload/'
 
-#Parameters for Wi-Fi connection.
+#Wi-Fi接続パラメータ
 ssid = "0024A5C1575C-G/A"
 password = "s3ws533kkphsh"
-# Japan standard time, UTC+9-hour.
+#日本標準時(UTC+9時間)
 UTC_OFFSET = 9
-#NTP server domain.
+#NTPサーバ ドメイン
 NTP_SRV = "ntp.nict.jp"
+
 
 def countdown_timer(seconds):
     print('Timer start!')
@@ -31,7 +33,7 @@ def countdown_timer(seconds):
     print('Time up!')
 
 def upload_data(url, file_name):
-    # Get cookie
+    # To get cookie
     session = requests.session()
     res = session.get(url)
     csrf = session.cookies['csrftoken']
@@ -41,23 +43,28 @@ def upload_data(url, file_name):
         # "next": url,
         "csrfmiddlewaretoken" : csrf,
     }
+    
     files = {
         'file': open(file_name, 'rb')
     }
+
     headers = {
         "Referer": url,
         # 注意：以下を指定すると誤動作する
         # "Content-Type": "multipart/form-data" ,
     }
+
     response = session.post(
         url, 
         data = data, 
         files = files, 
         headers = headers
     )
+    
     return response
 
 def upload_task(url, file_name):
+    
     response = upload_data(url, file_name)
     # 2023.9.15 Log保存 
     with open("../upload_file/upload.log", "ab") as f:
@@ -68,6 +75,7 @@ def upload_task(url, file_name):
         
     else:
         print (f"-- missed upload, error: {response.status_code} --")
+
         
 # main function
 if __name__ == "__main__":
@@ -125,6 +133,20 @@ if __name__ == "__main__":
 #except KeyboardInterrupt:
     # Turn off the display
 #    print("「Ctrl + c」キーが押されました。")
+
+##################################################
+#      液晶ディスプレイ（LCD）初期設定
+##################################################
+
+#I2Cを利用するため、オブジェクト（i2c）を作成
+#i2c = I2C(0,sda=Pin(16), scl=Pin(17), freq=400000)
+#LCDのパラメータを設定
+#ADR = 0x27
+#ROW = 2
+#COL = 16
+
+#LCDを利用するため、オブジェクト（lcd）を作成
+#lcd = I2cLcd(i2c, ADR, ROW, COL)
 
 ##################################################
 #      【関数】Wi-Fiに接続

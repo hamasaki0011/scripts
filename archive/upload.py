@@ -6,22 +6,8 @@ import threading
 # import pprint
 # import json
 
-#Network/NTP
-import network
-import rp2
-import ntptime
-#import time
-
-# Target url
+# This is the target url
 URL = 'http://10.10.210.87/upload/'
-
-#Parameters for Wi-Fi connection.
-ssid = "0024A5C1575C-G/A"
-password = "s3ws533kkphsh"
-# Japan standard time, UTC+9-hour.
-UTC_OFFSET = 9
-#NTP server domain.
-NTP_SRV = "ntp.nict.jp"
 
 def countdown_timer(seconds):
     print('Timer start!')
@@ -31,7 +17,7 @@ def countdown_timer(seconds):
     print('Time up!')
 
 def upload_data(url, file_name):
-    # Get cookie
+    # To get cookie
     session = requests.session()
     res = session.get(url)
     csrf = session.cookies['csrftoken']
@@ -41,23 +27,28 @@ def upload_data(url, file_name):
         # "next": url,
         "csrfmiddlewaretoken" : csrf,
     }
+    
     files = {
         'file': open(file_name, 'rb')
     }
+
     headers = {
         "Referer": url,
         # 注意：以下を指定すると誤動作する
         # "Content-Type": "multipart/form-data" ,
     }
+
     response = session.post(
         url, 
         data = data, 
         files = files, 
         headers = headers
     )
+    
     return response
 
 def upload_task(url, file_name):
+    
     response = upload_data(url, file_name)
     # 2023.9.15 Log保存 
     with open("../upload_file/upload.log", "ab") as f:
@@ -68,6 +59,7 @@ def upload_task(url, file_name):
         
     else:
         print (f"-- missed upload, error: {response.status_code} --")
+
         
 # main function
 if __name__ == "__main__":
@@ -77,21 +69,6 @@ if __name__ == "__main__":
     dir_path = "/home/pi/works/upload_file/"
     file_name = dir_path + sys.argv[1] + '.csv'
     print("ファイル名 = ", file_name)
-    
-    try:
-        #Wi-Fiに接続
-        print ("--- connecting ---")
-        ip_add = wifi_connect()
-    
-        #NTPサーバから日時取得
-        get_ntp_time()    
-        #1秒待ち
-        time.sleep(1)
-        
-
-    except KeyboardInterrupt:
-        # Turn off the display
-        print("「Ctrl + c」キーが押されました。")
     
     while True:
         response_code = ""
@@ -122,12 +99,60 @@ if __name__ == "__main__":
                 print (f"-- missed upload, error: {response_code} --")
         time.sleep(1)
 
-#except KeyboardInterrupt:
-    # Turn off the display
-#    print("「Ctrl + c」キーが押されました。")
 
 ##################################################
+#      モジュールの読み込み
+##################################################
+
+#I2C
+#from machine import Pin, I2C
+#from pico_i2c_lcd import I2cLcd
+
+#Network/NTP
+import network
+import rp2
+import ntptime
+import time
+
+
+##################################################
+#      Wi-Fi接続／時刻パラメータ
+##################################################
+
+#Wi-Fi接続パラメータ
+ssid = "Wi-FiルータのSSIDを設定します。"
+password = "Wi-Fiルータのパスワードを設定します。"
+
+#日本標準時(UTC+9時間)
+UTC_OFFSET = 9
+
+#NTPサーバ ドメイン
+NTP_SRV = "ntp.nict.jp"
+
+
+##################################################
+#
+#      液晶ディスプレイ（LCD）初期設定
+#
+##################################################
+
+#I2Cを利用するため、オブジェクト（i2c）を作成
+i2c = I2C(0,sda=Pin(16), scl=Pin(17), freq=400000)
+
+
+#LCDのパラメータを設定
+ADR = 0x27
+ROW = 2
+COL = 16
+
+
+#LCDを利用するため、オブジェクト（lcd）を作成
+lcd = I2cLcd(i2c, ADR, ROW, COL)
+
+##################################################
+#
 #      【関数】Wi-Fiに接続
+#
 ##################################################
 
 def wifi_connect():
@@ -142,18 +167,18 @@ def wifi_connect():
     wlan.config(pm = 0xa11140)
     
     #液晶ディスプレイ画面を消去
-    #lcd.clear()
+    lcd.clear()
 
     #Wi-Fiに接続
     wlan.connect(ssid, password)
     while not wlan.isconnected() and wlan.status() >= 0:
 
         #LCDに文字表示
-        #lcd_disp("Wait for", "connection...")       
-        #time.sleep(1)
+        lcd_disp("Wait for", "connection...")       
+        time.sleep(1)
     
     ip_add = wlan.ifconfig()[0]
-    #lcd_disp("Connected on", f' {ip_add}')
+    lcd_disp("Connected on", f' {ip_add}')
     
     #ダミー
     time.sleep(2)
@@ -162,7 +187,9 @@ def wifi_connect():
 
 
 ##################################################
+#
 #      【関数】NTPサーバから日時取得
+#
 ##################################################
 
 def get_ntp_time():
@@ -184,9 +211,12 @@ def get_ntp_time():
     
     #ダミー
     time.sleep(2)
+   
 
 ##################################################
+#
 #      【関数】日付・時刻整形
+#
 ##################################################
 
 def format_dttm(day_tm):
@@ -201,19 +231,24 @@ def format_dttm(day_tm):
 
 
 ##################################################
+#
 #      【関数】LCDに文字表示
+#
 ##################################################
 
-#def lcd_disp(msg1, msg2):
+def lcd_disp(msg1, msg2):
+    
     #LCDに文字を表示
-#    lcd.move_to(0, 0)
-#    lcd.putstr(msg1) 
-#    lcd.move_to(0, 1)
-#    lcd.putstr(msg2)
+    lcd.move_to(0, 0)
+    lcd.putstr(msg1) 
+    lcd.move_to(0, 1)
+    lcd.putstr(msg2)
 
 
 ##################################################
+#
 #      【関数】日付時刻を取得
+#
 ##################################################
 
 def get_dattm():
@@ -228,8 +263,11 @@ def get_dattm():
    
    
 ##################################################
+#
 #      メイン
+#
 ##################################################
+
 
 try:
     
@@ -240,15 +278,15 @@ try:
     get_ntp_time()
     
     #液晶ディスプレイ画面を消去
-#    lcd.clear()
+    lcd.clear()
     
     #液晶ディスプレイに日付・時刻表示
-#    while True:
+    while True:
         #日付・時刻を取得
-#        dat,tm = get_dattm()    
+        dat,tm = get_dattm()    
     
         #LCDに文字表示
-#        lcd_disp(dat, tm)
+        lcd_disp(dat, tm)
         
         #1秒待ち
         time.sleep(1)
@@ -259,7 +297,7 @@ except KeyboardInterrupt:
     print("「Ctrl + c」キーが押されました。")
     
     #LCD消灯
-#    lcd.backlight_off()
-#    lcd.display_off()
+    lcd.backlight_off()
+    lcd.display_off()
     
-#    machine.reset()
+    machine.reset()
