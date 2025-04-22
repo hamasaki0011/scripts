@@ -21,7 +21,7 @@ def upload_data(url, file_name):
     session = requests.session()
     res = session.get(url)
     csrf = session.cookies['csrftoken']
-    print(f"It got a csrf = {csrf}")
+    #print(f"It got a csrf = {csrf}")
 
     data = {
         # "next": url,
@@ -51,7 +51,7 @@ def upload_task(url, file_name):
     
     response = upload_data(url, file_name)
     # 2023.9.15 Log保存 
-    with open("work/upload.log", "ab") as f:
+    with open("../upload_file/upload.log", "ab") as f:
         f.write(response.text.encode())
     
     if response.status_code == 200:
@@ -66,8 +66,8 @@ if __name__ == "__main__":
     print ("-------------- start upload --------------")
     
     # countdown_timer(10)
-    
-    file_name = 'csvs/' + sys.argv[1] + '.csv'
+    dir_path = "/home/pi/works/upload_file/"
+    file_name = dir_path + sys.argv[1] + '.csv'
     print("ファイル名 = ", file_name)
     
     while True:
@@ -75,19 +75,19 @@ if __name__ == "__main__":
         now = datetime.datetime.now()
         now_full = now.strftime("%Y-%m-%d %H:%M")
         now_s = now.strftime("%S")
-        print(now_s)
+        #print(now_s)
         if now_s == "05":
             print("It's time to upload!")
             try:
                 response = upload_data(URL, file_name)
                 response_code = response.status_code
-                with open("work/upload.log", "a") as f:
+                with open("../upload_file/upload.log", "a") as f:
                     # f.write(response.text.encode())
                     f.write(f'{now_full} status({response_code}) : upload complete\n')
 
             except Exception as e: 
                 print("Exception error has occurred")
-                with open("work/upload.log", "a") as f:
+                with open("../upload_file/upload.log", "a") as f:
                     f.write(f'{now_full} status({response_code}) : Exception error occurred {e} \n')
                     
             if response_code == 200:
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         
             else:
                 print (f"-- missed upload, error: {response_code} --")
-        else:
-            print("Not at time, It's " + now.strftime("%Y-%m-%d %H:%M:%S"))
+        #else:
+        #    print("Not at time, It's " + now.strftime("%Y-%m-%d %H:%M:%S"))
         # threading.Timer(10, upload_task(URL, file_name)).start()
         time.sleep(1)

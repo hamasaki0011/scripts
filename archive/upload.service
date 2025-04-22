@@ -1,0 +1,13 @@
+[Unit]
+Description=upload
+After=syslog.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/pi/works/upload_file/
+ExecStart=python3 /home/pi/works/upload/upload.py testWork
+TimeoutStopSec=5
+StandardOutput=null
+
+[Install]
+WantedBy = multi-user.target
